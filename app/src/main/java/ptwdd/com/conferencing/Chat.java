@@ -14,11 +14,13 @@ import android.os.Message;
 import android.os.Messenger;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
+import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
 import android.widget.ImageButton;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.sinch.android.rtc.ClientRegistration;
@@ -41,54 +43,79 @@ public class Chat extends AppCompatActivity implements ServiceConnection {
 
     SinchClient sinchClient;
     int PERMISSION_ALL = 1;
-    private static boolean permissionAccepted = false;
     private String [] permissions = {
                                         Manifest.permission.RECORD_AUDIO,
                                         Manifest.permission.MODIFY_AUDIO_SETTINGS,
                                         Manifest.permission.READ_PHONE_STATE};
-    private static final int REQUEST_RECORD_AUDIO_PERMISSION = 200;
+    private static final int REQUEST_AUDIO = 200;
+    private static final int REQUEST_PHONE_STATE = 201;
 
+
+    TextView conf_status;
+    private View mLayout;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.chat);
+        mLayout = findViewById(R.id.main_layout);
+
         getSupportActionBar().hide();
         media();
         mAudioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
 
         if(!hasPermissions(this, permissions)){
             ActivityCompat.requestPermissions(this, permissions, PERMISSION_ALL);
-        }
-        if(permissionAccepted == true){
-            Log.d(TAG, "permissionAccepted: "+permissionAccepted);
+        }else{
             initSinchClient();
         }
-
-
     }
 
-    public static boolean hasPermissions(Context context, String... permissions) {
+    public  boolean hasPermissions(Context context, String... permissions) {
         if (context != null && permissions != null) {
             for (String permission : permissions) {
                 if (ActivityCompat.checkSelfPermission(context, permission) != PackageManager.PERMISSION_GRANTED) {
+
+                    if (ActivityCompat.shouldShowRequestPermissionRationale(Chat.this, permission)) {
+                        // Show an explanation to the user *asynchronously* -- don't block
+                        // this thread waiting for the user's response! After the user
+                        // sees the explanation, try again to request the permission.
+                        Snackbar.make(mLayout, R.string.permission_contacts_rationale,
+                                Snackbar.LENGTH_INDEFINITE)
+                                .setAction(R.string.ok, new View.OnClickListener() {
+                                    @Override
+                                    public void onClick(View view) {
+                                        ActivityCompat.requestPermissions(Chat.this,  new String[]{Manifest.permission.RECORD_AUDIO}, PERMISSION_ALL);
+                                    }
+                                })
+                                .show();
+                    } else {
+                        ActivityCompat.requestPermissions(this, permissions, PERMISSION_ALL);
+                    }
                     return false;
                 }
             }
         }
-        permissionAccepted = true;
         return true;
     }
 
 
-
-
-
-
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            Log.d(TAG, "onRequestPermissionsResult: ");
+            initSinchClient();
+        }else{
+            ActivityCompat.requestPermissions(this, permissions, PERMISSION_ALL);
+        }
+    }
 
     private void initSinchClient() {
 
         ImageButton start_conf = findViewById(R.id.talk_button);
+        conf_status = findViewById(R.id.status);
+
         start_conf.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -134,7 +161,6 @@ public class Chat extends AppCompatActivity implements ServiceConnection {
         });
 
         sinchClient.start();
-        sinchClient.checkManifest();
         Log.d(TAG, "initSinchClient: checkManifest ");
 
 
@@ -149,16 +175,19 @@ public class Chat extends AppCompatActivity implements ServiceConnection {
             @Override
             public void onCallProgressing(Call call) {
                 Log.d(TAG, "onCallProgressing: "+call);
+                conf_status.setText("STATUS : Call Progress");
             }
 
             @Override
             public void onCallEstablished(Call call) {
                 Log.d(TAG, "onCallEstablished: "+call);
+                conf_status.setText("STATUS : Call Established");
             }
 
             @Override
             public void onCallEnded(Call call) {
                 Log.d(TAG, "onCallEnded: "+call);
+                conf_status.setText("STATUS : Call End");
             }
 
             @Override
@@ -210,7 +239,9 @@ public class Chat extends AppCompatActivity implements ServiceConnection {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        sinchClient.stopListeningOnActiveConnection();
-        sinchClient.terminate();
+        if(sinchClient != null){
+            sinchClient.stopListeningOnActiveConnection();
+            sinchClient.terminate();
+        }
     }
 }

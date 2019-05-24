@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">Conferencing</string>
+    <string name="permission_contacts_rationale">In order to use the conference in the app. Accept the permission</string>
+    <string name="ok">Ok</string>
 </resources>
