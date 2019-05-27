@@ -41,14 +41,16 @@ public class Chat extends AppCompatActivity implements ServiceConnection {
     private static final String TAG = "Chat";
     private AudioManager mAudioManager;
 
+    private String APPLICATION_KEY = "dda6939c-f8f2-49df-94f0-04bdc6bef99b";
+    private String APPLICATION_SECRET = "zVSlUwYDk0Kp7FtTfDK19g==";
+    private String ENVIRONMENT_HOST = "sandbox.sinch.com"; //  production - clientapi.sinch.com
+
     SinchClient sinchClient;
     int PERMISSION_ALL = 1;
     private String [] permissions = {
                                         Manifest.permission.RECORD_AUDIO,
                                         Manifest.permission.MODIFY_AUDIO_SETTINGS,
                                         Manifest.permission.READ_PHONE_STATE};
-    private static final int REQUEST_AUDIO = 200;
-    private static final int REQUEST_PHONE_STATE = 201;
 
 
     TextView conf_status;
@@ -130,9 +132,9 @@ public class Chat extends AppCompatActivity implements ServiceConnection {
         // Instantiate a SinchClient using the SinchClientBuilder.
         android.content.Context context = this.getApplicationContext();
         sinchClient = Sinch.getSinchClientBuilder().context(context)
-                .applicationKey("dda6939c-f8f2-49df-94f0-04bdc6bef99b")
-                .applicationSecret("zVSlUwYDk0Kp7FtTfDK19g==")
-                .environmentHost("sandbox.sinch.com")
+                .applicationKey(APPLICATION_KEY)
+                .applicationSecret(APPLICATION_SECRET)
+                .environmentHost(ENVIRONMENT_HOST)
                 .userId(deviceId)
                 .build();
         sinchClient.setSupportCalling(true);
